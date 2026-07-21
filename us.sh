@@ -56,13 +56,13 @@ fi
 echo -e "${YELLOW}[4/5] Создание start-admin.sh...${NC}"
 cat > start-admin.sh << EOF
 #!/bin/bash
-# Администратор сети BeySoN-VPN
+# Администратор сети BeySoN-test
 # Запускать из папки $WORKDIR
 
 ADMIN_KEY=\$(cat $WORKDIR/admin.key)
 
 easytier-core \\
-  --network-name "BeySoN-VPN" \\
+  --network-name "BeySoN-test" \\
   --network-secret "Asdf1234" \\
   --secure-mode \\
   --local-private-key "\$ADMIN_KEY" \\
@@ -120,7 +120,7 @@ else
 fi
 
 easytier-core \
-  --network-name "BeySoN-VPN" \
+  --network-name "BeySoN-test" \
   --credential "$GUEST_CREDENTIAL" \
   --dhcp \
   -e tcp://qwe.p8.ink:11010 \
