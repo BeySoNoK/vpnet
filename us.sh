@@ -1,7 +1,8 @@
+cat > setup.sh << 'EOF'
 #!/bin/bash
 set -e
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; NC='\033[0m'
-echo -e "${GREEN}=== Установка EasyTier Secure Mode (root) ===${NC}"
+echo -e "${GREEN}=== Установка EasyTier Secure Mode (конфиг) ===${NC}"
 
 WORKDIR="/root/vpn"
 mkdir -p "$WORKDIR"
@@ -12,14 +13,6 @@ if ! command -v easytier-core &> /dev/null; then
     echo -e "${YELLOW}Установка EasyTier...${NC}"
     apt update && apt install -y wget curl unzip openssl screen
     curl -fsSL "https://github.com/EasyTier/EasyTier/blob/main/script/install.sh?raw=true" | bash -s install
-fi
-
-# Остановка и отключение системного сервиса (если есть)
-if systemctl list-units --all | grep -q easytier@default; then
-    echo -e "${YELLOW}Отключаем системный сервис easytier@default...${NC}"
-    systemctl stop easytier@default.service || true
-    systemctl disable easytier@default.service || true
-    systemctl mask easytier@default.service || true
 fi
 
 # Генерация ключа администратора
@@ -35,18 +28,32 @@ else
     echo -e "${GREEN}Ключ загружен из admin.key${NC}"
 fi
 
-# Создание скрипта администратора
+# Создаём конфигурационный файл config.toml
+cat > config.toml << EOF
+dhcp = true
+listeners = [
+    "tcp://0.0.0.0:11010",
+    "udp://0.0.0.0:11010",
+]
+credential_file = "$WORKDIR/credentials.json"
+
+[network_identity]
+network_name = "BeySoN-VPN"
+network_secret = "Asdf1234"
+
+[[peer]]
+uri = "tcp://37.221.197.17:11010"
+
+[secure_mode]
+enabled = true
+local_private_key = "$ADMIN_KEY"
+EOF
+
+# Создаём скрипт запуска администратора (использует конфиг)
 cat > start-admin.sh << EOF
 #!/bin/bash
-ADMIN_KEY=\$(cat $WORKDIR/admin.key)
-easytier-core \\
-  --network-name "BeySoN-VPN" \\
-  --network-secret "Asdf1234" \\
-  --secure-mode \\
-  --local-private-key "\$ADMIN_KEY" \\
-  --dhcp \\
-  -e tcp://qwe.p8.ink:11010,tcp://37.221.197.17:11010 \\
-  --credential-file $WORKDIR/credentials.json
+cd $WORKDIR
+easytier-core -c config.toml
 EOF
 chmod +x start-admin.sh
 
@@ -63,7 +70,7 @@ echo "$SECRET"
 EOF
 chmod +x generate-invite.sh
 
-# Скрипт для гостя
+# Скрипт для гостя (также через конфиг, но использует credential)
 cat > start-guest.sh << 'EOF'
 #!/bin/bash
 if [[ $# -ge 1 ]]; then
@@ -76,7 +83,8 @@ else
         exit 1
     fi
 fi
-easytier-core --network-name "BeySoN-VPN" --credential "$CRED" --dhcp -e tcp://qwe.p8.ink:11010,tcp://37.221.197.17:11010
+# Гостю не нужен secure-mode, он использует credential
+easytier-core --network-name "BeySoN-VPN" --credential "$CRED" --dhcp -e tcp://37.221.197.17:11010
 EOF
 chmod +x start-guest.sh
 
@@ -93,3 +101,4 @@ echo "2. Сгенерируйте приглашение:"
 echo "   cd /root/vpn && ./generate-invite.sh 30d"
 echo ""
 echo "3. Гость запускает: ./start-guest.sh <ключ>"
+EOF
