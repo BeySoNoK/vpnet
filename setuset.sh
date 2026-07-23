@@ -25,11 +25,8 @@ listeners = ["tcp://0.0.0.0:11010", "udp://0.0.0.0:11010"]
 credential_file = "/root/vpn/credentials.json"
 
 [network_identity]
-network_name = "BeySoN-VPN"
+network_name = "BeySoN-test"
 network_secret = "Asdf1234"
-
-[[peer]]
-uri = "tcp://qwe.p8.ink:11010"
 
 [[peer]]
 uri = "tcp://37.221.197.17:11010"
@@ -64,7 +61,7 @@ if [ -z "$1" ]; then
   echo "Использование: $0 <ключ_приглашения>"
   exit 1
 fi
-easytier-core --network-name "BeySoN-VPN" --credential "$1" --dhcp -e tcp://qwe.p8.ink:11010 -e tcp://37.221.197.17:11010
+easytier-core --network-name "BeySoN-test" --credential "$1" --dhcp -e tcp://37.221.197.17:11010
 GUEST
 chmod +x /root/vpn/guest.sh
 
